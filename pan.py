@@ -77,13 +77,6 @@ commands = {
                         "I currently remember up to 30 lines for each user per channel.",
              "say" : ".say <stuff>" }
 
-class Recipe(SONManipulator): # still not sure about the recipe design. this can still change
-  """Sets the SON format for each recipe when it's inserted."""
-  def transform_incoming(son, collection):
-    out = SON([ ('_id', None), ('name', ""), ('desc', []), ('logs', []), ('tips', []), ('links', []), ('tags', []) ])
-    out.update(son)
-    return out
-
 
 class PanChan(Channel):
   """Uses the strings from namreply to set the values for each user in a channel."""
