@@ -349,14 +349,11 @@ class Marzipan(IRCClient):
 
   def record(self, params, chan):
     """Log recording function for remembering long recipes."""
-    print params
     m = recd.match(params)
     if m:
       log = self.channels[chan].get_userlog(m.group('target'))
-      print log, m.groupdict()
       log.reverse()
       out = []
-      f = open('log/'+ m.group('recipe') + '.txt', 'w+b')
       if m.group('except'):
         for x in range(0, int(m.group('lines'))):
           if str(x+1) in m.group('except').split(','):
@@ -364,16 +361,16 @@ class Marzipan(IRCClient):
           out.append(log[x])
       else:
         out = log[0:int(m.group('lines'))]
-      out.reverse()
-      f.writelines(*out)
-      return "Recipe recorded. Its text file can be found here: http://tritium.develfra.me/pan/{}.txt".format(quote(m.group('recipe')))
+      oid = self.db.recipes.insert({'name': m.group('recipe'), 'desc': out, 'whose': m.group('target')})
+      self.report('record', oid, "Recipe Name: {}, # of lines: {}".format(m.group('recipe'), len(out)))
+      return "Okay. Recipe successfully recorded."
     return "Invalid parameters for recipe recorder."
 
   def report(self, func, oid=None, info="", *args):
     if self.logchan == None:
       return
     elif func == 'record':
-      helpers.msg(self, self.logchan, "Inserted new recipe recording of {} with OID('{}')".format( info, oid) )
+      helpers.msg(self, self.logchan, "Inserted new recipe recording [{}] with OID('{}')".format( info, oid) )
     elif func == 'quote':
       helpers.msg(self, self.logchan, "Inserted new quote of {} with OID('{}')".format( info, oid) )
     elif info != "":
@@ -384,7 +381,7 @@ class Marzipan(IRCClient):
     return msg
 
   def search(self, msg, *args):
-    """More complex search spider for specific sites."""
+    """More complex search spider for specific sites. Will add later."""
     pass
 
   def quote(self, target, chan, phrase, *args):
