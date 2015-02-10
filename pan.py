@@ -244,6 +244,8 @@ class PanHandler(DefaultCommandHandler):
         if m:
           return HTMLParser().unescape(self.client.crawl(m.group('url')))
         else:
+          if msg == 'botsnack':
+            return ":D"
           return ""
       else:
         return self.addressed(m.group('args'), who, chan)
