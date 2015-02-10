@@ -40,7 +40,9 @@ add = re.compile("add (?P<items>.*) to my pantry", re.I)
 ls = re.compile("(list pantry|what's in my pantry(\?|))", re.I)
 #ls2 = re.compile("list (?P<whos>.*) pantry", re.I)
 rm = re.compile("remove (?P<items>.*) from my pantry", re.I)
-cls = re.compile("clear my pantry", re.I)
+clr = re.compile("clear my pantry", re.I)
+recp = re.compile("(?P<recipe>.*) is (?P<desc>.*)", re.I)
+
 
 vol = { # US measurements
         "tsp" : 1, # this dict uses teaspoons as a base
@@ -212,13 +214,17 @@ class PanHandler(DefaultCommandHandler):
         return "Okay, {}, I removed them from your pantry.".format(who)
       else:
         return "Sorry, {}, but I don't think you have a pantry...".format(who)
-    m = cls.match(params)
+    m = clr.match(params)
     if m:
       if query:
         pantry.update({ 'user': who }, { "$set": {"items": []} })
         return "Okay, {}, I cleared out your pantry.".format(who)
       else:
         return "Sorry {}, but I don't think you have a pantry... >.>".format(who)
+    m = recp.match(params)
+    if m:
+      self.client.add_recipe(m.group('recipe'), m.group('desc'))
+      return "Okay, {}, I added the recipe.".format(who)
     return ""
 
   def endofmotd(self, server, me, msg):
@@ -307,6 +313,10 @@ class Marzipan(IRCClient):
     self.db = MongoClient(document_class=SON).mzpn
     self.logchan = logchannel
 
+  def add_recipe(self, name, desc):
+    oid = self.db.recipes.insert( SON([('name', name), ('desc', desc)]) )
+    self.report("add", oid, "Recipe Name: {}".format(name))
+
   def convert(self, msg, *args):
     """Converts between units of volume and weight, respectively."""
     m = conv.match(msg.lower())
@@ -361,7 +371,7 @@ class Marzipan(IRCClient):
           out.append(log[x])
       else:
         out = log[0:int(m.group('lines'))]
-      oid = self.db.recipes.insert({'name': m.group('recipe'), 'desc': out, 'whose': m.group('target')})
+      oid = self.db.recipes.insert( SON([('name', m.group('recipe')), ('desc', out), ('whose', m.group('target'))]) )
       self.report('record', oid, "Recipe Name: {}, # of lines: {}".format(m.group('recipe'), len(out)))
       return "Okay. Recipe successfully recorded."
     return "Invalid parameters for recipe recorder."
@@ -370,9 +380,11 @@ class Marzipan(IRCClient):
     if self.logchan == None:
       return
     elif func == 'record':
-      helpers.msg(self, self.logchan, "Inserted new recipe recording [{}] with OID('{}')".format( info, oid) )
+      helpers.msg(self, self.logchan, "Inserted new recipe recording [{}] ({})".format(info, oid) )
     elif func == 'quote':
-      helpers.msg(self, self.logchan, "Inserted new quote of {} with OID('{}')".format( info, oid) )
+      helpers.msg(self, self.logchan, "Inserted new quote of {} ({})".format(info, oid) )
+    elif func == 'add':
+      helpers.msg(self, self.logchan, "Inserted new recipe [{}] ({})".format(info, oid) )
     elif info != "":
       helpers.msg(self, self.logchan, info)
 
