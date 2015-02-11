@@ -169,7 +169,6 @@ class PanHandler(DefaultCommandHandler):
     pantry = self.client.db.pantry
     isop = self.client.channels[chan].has_privs(who)
     query = pantry.find_one({ 'user': who }, {'items': 1})
-#    target = who
     m = intro.match(params)
     if m: return "Hi, I'm Marzipan, or Pan for short. It's nice to meet you. :)"
     m = rem.match(params)
@@ -287,12 +286,13 @@ class PanHandler(DefaultCommandHandler):
     self.client.channels[chan].remove_user(source.split('!')[0])
 
   def privmsg(self, nick, chan, msg):
+    msg = msg.strip()
     response = self.getCommand(msg, chan, nick.split('!')[0])
     if chan[0] != "#":
       chan = nick.split('!')[0]
       print "PM | <{}> {}".format(nick, msg)
       if msg == "\x01VERSION\x01":
-        """There's no basic ctcp function for some reason, so I have to deal with it here. I'll probably have to make one later."""
+        """There's no basic ctcp function for some reason as far as I know, so I have to deal with it here. I'll probably have to make one later."""
         self.client.send("NOTICE %s \x01VERSION Marzipan, the IRC Cooking Bot ver 0.2.9alpha\x01" % chan)
     else:
       print "{} | <{}> {}".format(chan, nick.split('!')[0], msg)
