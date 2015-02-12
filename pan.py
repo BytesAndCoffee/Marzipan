@@ -38,7 +38,6 @@ rem = re.compile("remember (?P<target>.*) (?P<phrase>.*)", re.I)
 make = re.compile("make a (new |)pantry for (?P<user>.*)", re.I)
 add = re.compile("add (?P<items>.*) to my pantry", re.I)
 ls = re.compile("(list pantry|what's in my pantry(\?|))", re.I)
-#ls2 = re.compile("list (?P<whos>.*) pantry", re.I)
 rm = re.compile("remove (?P<items>.*) from my pantry", re.I)
 clr = re.compile("clear my pantry", re.I)
 recp = re.compile("(?P<recipe>.*) is (?P<desc>.*)", re.I)
@@ -102,8 +101,6 @@ class PanChan(Channel):
     self.logdict[nick] = tempfile.NamedTemporaryFile(bufsize=5120)
     Channel.add_user(self, nick)
 
-  #NOTE: Make a new change_user method that transfers the logdict when nicks are changed.
-
   def clear_mode(self, mode, value=None):
     """Passes on 'a' modes since I didn't feel like making an admindict at the time. Later on I might (have to) though."""
     if mode == 'a':
@@ -111,6 +108,11 @@ class PanChan(Channel):
     else:
       Channel.clear_mode(self, mode, value)
   
+  def change_nick(self, before, after):
+    Channel.change_nick(self, before, after)
+    self.logdict[after] = self.logdict[before]
+    del self.logdict[before]
+
   def get_userlog(self, nick):
     if self.logdict.has_key(nick):
       log = self.logdict[nick]
