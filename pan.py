@@ -43,6 +43,8 @@ clr = re.compile("clear my pantry", re.I)
 recp = re.compile("(?P<recipe>.*) is (?P<desc>.*)", re.I)
 
 
+LINE_LIMIT = 30 #maximum number of lines per user that the bot will remember
+
 vol = { # US measurements
         "tsp" : 1, # this dict uses teaspoons as a base
         "tbsp" : 3,
@@ -83,12 +85,14 @@ class PanChan(Channel):
   """Uses the strings from namreply to set the values for each user in a channel."""
   def __init__(self, namreply=None):
     Channel.__init__(self)
+    self.admindict = IRCDict()
     self.logdict = IRCDict()
     if namreply:
       for nick in namreply.split(' '):
         if nick[0] == '~': self.ownerdict[nick[1:]] = 1
+        elif nick[0] == '&': self.admindict[nick[1:]] = 1
         elif nick[0] == '@': self.operdict[nick[1:]] = 1
-        elif nick[0] == '%': self.halfopdict[nick[1:]] = 1
+        elif nick[0] =='%': self.halfopdict[nick[1:]] = 1
         elif nick[0] == '+': self.voicedict[nick[1:]] = 1
         else: 
           self.userdict[nick] = 1
@@ -102,9 +106,8 @@ class PanChan(Channel):
     Channel.add_user(self, nick)
 
   def clear_mode(self, mode, value=None):
-    """Passes on 'a' modes since I didn't feel like making an admindict at the time. Later on I might (have to) though."""
     if mode == 'a':
-      pass
+      del self.admindict[value]
     else:
       Channel.clear_mode(self, mode, value)
   
@@ -121,7 +124,7 @@ class PanChan(Channel):
     return None
 
   def has_privs(self, nick):
-    return self.is_oper(nick) or self.is_halfop(nick) or self.is_owner(nick)
+    return self.is_oper(nick) or self.is_halfop(nick) or self.isadmin or self.is_owner(nick)
 
   def handle_modes(self, modes, args):
     m = mod.match(modes)
@@ -143,13 +146,16 @@ class PanChan(Channel):
       if m.group('mode2'):
         self.handle_modes(m.group('mode2'), *l)
 
+  def is_admin(self, nick):
+    return nick in self.admindict
+
   def log_user(self, nick, msg):
     log = self.logdict[nick]
     log.seek(0)
     lines = log.readlines()
-    if len(lines) < 30: # maybe add a LINE_LIMIT constant somewhere for this later on?
+    if len(lines) < LINE_LIMIT:
       log.write(msg + '\n')
-    elif len(lines) == 30:
+    elif len(lines) == LINE_LIMIT:
       lines.pop(0)
       lines.append(msg + '\n')
       log.seek(0)
@@ -158,7 +164,7 @@ class PanChan(Channel):
 
   def set_mode(self, mode, value=None):
     if mode == 'a':
-      pass
+      self.admindict[value] = 1
     else:
       Channel.set_mode(self, mode, value)
 
