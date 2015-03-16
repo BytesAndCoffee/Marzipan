@@ -40,7 +40,7 @@ add = re.compile("add (?P<items>.*) to my pantry", re.I)
 ls = re.compile("(list pantry|what's in my pantry(\?|))", re.I)
 rm = re.compile("remove (?P<items>.*) from my pantry", re.I)
 clr = re.compile("clear my pantry", re.I)
-recp = re.compile("(?P<recipe>.*) is (?P<desc>.*)", re.I)
+recp = re.compile("(?P<recipe>.*?) is (?P<desc>.*)", re.I)
 
 
 LINE_LIMIT = 30 #maximum number of lines per user that the bot will remember
